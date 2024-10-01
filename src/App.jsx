@@ -1,23 +1,37 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import Places from './components/Places.jsx';
-import { AVAILABLE_PLACES } from './data.js';
-import Modal from './components/Modal.jsx';
-import DeleteConfirmation from './components/DeleteConfirmation.jsx';
-import logoImg from './assets/logo.png';
+import logoImg from "./assets/logo.png";
+import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
+import Modal from "./components/Modal.jsx";
+import Places from "./components/Places.jsx";
+import { AVAILABLE_PLACES } from "./data.js";
+
+import { sortPlacesByDistance } from "./loc.js";
+
+// Nem sempre é necessário usar o useEffect, dependendo do caso, podemos colocar o código para fora de componente
+const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+const storedPlaces = storedIds.map((id) => AVAILABLE_PLACES.find((place) => place.id === id));
 
 function App() {
-  const modal = useRef();
   const selectedPlace = useRef();
-  const [pickedPlaces, setPickedPlaces] = useState([]);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
+  const [availablePlaces, setAvailablePlaces] = useState([]);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const sortedPlaces = sortPlacesByDistance(AVAILABLE_PLACES, position.coords.latitude, position.coords.longitude);
+      setAvailablePlaces(sortedPlaces);
+    });
+  }, []);
 
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setModalIsOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setModalIsOpen(false);
   }
 
   function handleSelectPlace(id) {
@@ -28,42 +42,49 @@ function App() {
       const place = AVAILABLE_PLACES.find((place) => place.id === id);
       return [place, ...prevPickedPlaces];
     });
+
+    // Esse código também é um side effect, pois ele não precisa ser executado novamente a cada ciclo, mas ele não precisa estar em um useEffect, já que aqui será executado na quantidade correta, quando necessário
+    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+    if (storedIds.indexOf(id) === -1) localStorage.setItem("selectedPlaces", JSON.stringify([id, ...storedIds]));
   }
 
   function handleRemovePlace() {
-    setPickedPlaces((prevPickedPlaces) =>
-      prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
+    setPickedPlaces((prevPickedPlaces) => prevPickedPlaces.filter((place) => place.id !== selectedPlace.current));
+    setModalIsOpen(false);
+
+    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+    localStorage.setItem(
+      "selectedPlaces",
+      JSON.stringify(
+        storedIds.filter((id) => {
+          id !== selectedPlace.current;
+        })
+      )
     );
-    modal.current.close();
   }
 
   return (
     <>
-      <Modal ref={modal}>
-        <DeleteConfirmation
-          onCancel={handleStopRemovePlace}
-          onConfirm={handleRemovePlace}
-        />
+      <Modal open={modalIsOpen} onClose={handleStopRemovePlace}>
+        <DeleteConfirmation onCancel={handleStopRemovePlace} onConfirm={handleRemovePlace} />
       </Modal>
 
       <header>
         <img src={logoImg} alt="Stylized globe" />
         <h1>PlacePicker</h1>
-        <p>
-          Create your personal collection of places you would like to visit or
-          you have visited.
-        </p>
+        <p>Create your personal collection of places you would like to visit or you have visited.</p>
       </header>
       <main>
         <Places
           title="I'd like to visit ..."
-          fallbackText={'Select the places you would like to visit below.'}
+          fallbackText={"Select the places you would like to visit below."}
           places={pickedPlaces}
           onSelectPlace={handleStartRemovePlace}
         />
         <Places
           title="Available Places"
-          places={AVAILABLE_PLACES}
+          fallbackText="Sorting places by distance..."
+          places={availablePlaces}
           onSelectPlace={handleSelectPlace}
         />
       </main>
