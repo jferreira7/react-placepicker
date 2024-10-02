@@ -53,3 +53,27 @@ const Modal = function Modal({ open, children }) {
   );
 };
 ```
+
+### Cleanup Function
+
+A função de limpeza será executada, apenas, antes do componentes ser desmontado, ou seja, antes dele ser removido da DOM. Ou quando o valor de uma dependência muda e o useEffect será executado novamente. Casos de uso:
+
+- Cancelar timers.
+- Remover listeners de eventos.
+- Limpar subscrições.
+- Desfazer quaisquer modificações no DOM feitas no useEffect.
+
+Com isso, a cleanup function garante que não se crie múltiplas instâncias de subscrições, listeners, ou qualquer outro recurso que possa acumular.
+
+```ts
+useEffect(() => {
+  const timer = setTimeout(() => {
+    onConfirm();
+  }, 3000);
+
+  // Cleanup function
+  return () => {
+    clearTimeout(timer);
+  };
+}, []);
+```
