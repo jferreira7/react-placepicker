@@ -54,6 +54,10 @@ const Modal = function Modal({ open, children }) {
 };
 ```
 
+### Quando passar algo como dependência?
+
+Quando estamos usando states ou props dentro da função useEffect é correto passa-las também como dependências.
+
 ### Cleanup Function
 
 A função de limpeza será executada, apenas, antes do componentes ser desmontado, ou seja, antes dele ser removido da DOM. Ou quando o valor de uma dependência muda e o useEffect será executado novamente. Casos de uso:
@@ -77,3 +81,30 @@ useEffect(() => {
   };
 }, []);
 ```
+
+### Funções e objetos como dependências
+
+Quando adicionamos funções como dependências há um risco de ser criado um loop infinito, pois quando adicionamos uma dependencia no array, estamos dizendo para o react, que a função useEffect deve ser executada em dois momentos: quando o componente é executado e se o valor da dependência mudar.
+
+O problema com as funções passada por props é que no final, toda função no javascript é um objeto, com isso, quando o componente originário dessa função for recarregado, por qualquer motivo, essa função é recriada, acionando assim o useEffect novamente. E caso a função passada por props tenha alguma mudança de estado dentro dela (setAlgumaCoisa()), o componente será carregado novamente, criando assim o loop infinito.
+
+```ts
+export default function DeleteConfirmation({ onConfirm, onCancel }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onConfirm();
+    }, 3000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onConfirm]);
+  ...
+}
+```
+
+Não é sempre que isso irá acontecer, é preciso estar atento em cada caso.
+
+### Usando o useCallback Hook
+
+Esse hook ajuda a evitar o problem descrito acima.
