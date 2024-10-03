@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import logoImg from "./assets/logo.png";
 import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
@@ -48,7 +48,7 @@ function App() {
     if (storedIds.indexOf(id) === -1) localStorage.setItem("selectedPlaces", JSON.stringify([id, ...storedIds]));
   }
 
-  function handleRemovePlace() {
+  const handleRemovePlace = useCallback(function handleRemovePlace() {
     setPickedPlaces((prevPickedPlaces) => prevPickedPlaces.filter((place) => place.id !== selectedPlace.current));
     setModalIsOpen(false);
 
@@ -61,7 +61,7 @@ function App() {
         })
       )
     );
-  }
+  }, []);
 
   return (
     <>

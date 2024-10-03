@@ -107,4 +107,47 @@ Não é sempre que isso irá acontecer, é preciso estar atento em cada caso.
 
 ### Usando o useCallback Hook
 
-Esse hook ajuda a evitar o problem descrito acima.
+Esse hook ajuda a evitar o problem descrito acima. A ideia desse hook é envolver determinada função com ele e com isso, pegar como retorno a função para poder ser chamada em outros lugares. A função dentro do hook não será recriada toda vez que o componente for recarregado. Além disso, esse hook também aceita dependências, igual ao useEffect.
+
+```ts
+const handleRemovePlace = useCallback(function handleRemovePlace() {
+  setPickedPlaces((prevPickedPlaces) => prevPickedPlaces.filter((place) => place.id !== selectedPlace.current));
+  setModalIsOpen(false);
+
+  const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+  localStorage.setItem(
+    "selectedPlaces",
+    JSON.stringify(
+      storedIds.filter((id) => {
+        id !== selectedPlace.current;
+      })
+    )
+  );
+}, []);
+```
+
+### Outro uso para a Cleanup Function no hook useEffect
+
+Quando queremos executar um setInterval e para-lo em algum momento:
+
+```ts
+const TIMER = 3000;
+
+export default function DeleteConfirmation({ onConfirm, onCancel }) {
+  const [remainingTime, setRemainingTime] = useState(TIMER);
+
+  useEffect(() => {
+    const progress = setInterval(() => {
+      console.log("INTERVAL");
+      setRemainingTime((prevTime) => prevTime - 10);
+    }, 10);
+
+    return () => {
+      clearInterval(progress);
+    };
+  }, []);
+
+  ...
+
+}
+```
