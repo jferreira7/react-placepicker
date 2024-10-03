@@ -151,3 +151,7 @@ export default function DeleteConfirmation({ onConfirm, onCancel }) {
 
 }
 ```
+
+### Otimização nas atualizações dos componentes
+
+É sempre bom criar um componente novo para algo que será atualizado várias vezes, para evitar que algum outro componente seja atualizado desnecessáriamente, como no caso de uma progress bar. Separar ela em um componente isolado é bem mais perfomático para a aplicação como um todo.
